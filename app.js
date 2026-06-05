@@ -13,10 +13,11 @@ const DEFAULT_CANDIES = [
 
 // ── STATE ────────────────────────────────────────────────────────────────
 
-let names   = JSON.parse(localStorage.getItem('retro_names')   || 'null') || [...DEFAULT_NAMES];
-let candies = JSON.parse(localStorage.getItem('retro_candies') || 'null') || [...DEFAULT_CANDIES];
-let history = JSON.parse(localStorage.getItem('retro_history') || '[]');
-let spinning = false;
+let names      = JSON.parse(localStorage.getItem('retro_names')    || 'null') || [...DEFAULT_NAMES];
+let candies    = JSON.parse(localStorage.getItem('retro_candies') || 'null') || [...DEFAULT_CANDIES];
+let history    = JSON.parse(localStorage.getItem('retro_history') || '[]');
+let lastWinner = localStorage.getItem('retro_last_winner')        || null;
+let spinning   = false;
 
 // ── TABS ────────────────────────────────────────────────────────────────
 
@@ -136,11 +137,16 @@ function clearHistory() {
 function spin() {
   if (spinning) return;
 
-  const validNames   = names.filter(n => n.trim());
+  const allNames     = names.filter(n => n.trim());
   const validCandies = candies.filter(c => c.trim());
 
-  if (!validNames.length)   { showToast('⚠️ Voeg eerst teamleden toe!');    return; }
+  if (!allNames.length)     { showToast('⚠️ Voeg eerst teamleden toe!');    return; }
   if (!validCandies.length) { showToast('⚠️ Voeg eerst snoepsoorten toe!'); return; }
+
+  // Sluit vorige winner uit, tenzij er maar één persoon is
+  const validNames = allNames.length > 1 && lastWinner
+    ? allNames.filter(n => n !== lastWinner)
+    : allNames;
 
   spinning = true;
   document.getElementById('spinBtn').disabled = true;
@@ -169,6 +175,10 @@ function spin() {
     });
     localStorage.setItem('retro_history', JSON.stringify(history));
     renderHistory();
+
+    lastWinner = finalPerson;
+    localStorage.setItem('retro_last_winner', finalPerson);
+    renderLastWinnerBadge();
 
     launchConfetti();
     spinning = false;
@@ -261,6 +271,35 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// ── LAATSTE WINNER BADGE ──────────────────────────────────────────────
+
+function renderLastWinnerBadge() {
+  let badge = document.getElementById('last-winner-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'last-winner-badge';
+    badge.style.cssText = `
+      text-align: center; margin-bottom: 1rem;
+      font-size: 0.85rem; color: #aaa;
+    `;
+    const slotMachine = document.querySelector('.slot-machine');
+    slotMachine.insertBefore(badge, slotMachine.firstChild);
+  }
+
+  if (lastWinner && names.filter(n => n.trim()).length > 1) {
+    badge.innerHTML = `
+      <span style="
+        background: rgba(255,107,53,0.15);
+        border: 1px solid rgba(255,107,53,0.4);
+        color: #ff6b35; padding: 0.3rem 0.85rem;
+        border-radius: 2rem; font-size: 0.8rem;
+      ">⏭ <strong>${escHtml(lastWinner)}</strong> doet deze ronde niet mee</span>`;
+  } else {
+    badge.innerHTML = '';
+  }
+}
+
 // ── INIT ────────────────────────────────────────────────────────────────
 
 renderHistory();
+renderLastWinnerBadge();
