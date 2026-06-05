@@ -2,15 +2,13 @@
 
 const DEFAULT_NAMES = [
   'Teamlid 1', 'Teamlid 2', 'Teamlid 3', 'Teamlid 4',
-  'Teamlid 5', 'Teamlid 6', 'Teamlid 7', 'Teamlid 8',
+  'Teamlid 5', 'Teamlid 6', 'Teamlid 7',
 ];
 
 const DEFAULT_CANDIES = [
-  "M&M's 🟤", 'Haribo Goudbeertjes 🐻', 'Stroopwafels 🍪',
-  "Oreo's 🖤", 'Twix 🍫', 'Skittles 🌈', 'Djarum koeken 🧡',
-  'Chips & Dip 🥔', 'Kitkat 🍫', 'Jellybeans 🫧',
-  'Drop 🖤', 'Popcorn 🍿', 'Gevulde koeken 🍪', 'Trolli wormen 🐛',
-  'Kinder Bueno 🤎', 'Salmiak 🌑', 'Bosco ballen 🟡',
+  'Haribo Goudbeertjes 🐻',
+  'Drop 🖤',
+  'Haribo Mix 🌈',
 ];
 
 // ── STATE ────────────────────────────────────────────────────────────────
