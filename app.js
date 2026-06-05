@@ -134,7 +134,15 @@ function clearHistory() {
   if (!confirm('Geschiedenis wissen?')) return;
   history = [];
   Storage.remove('retro_history');
+
+  lastWinner = null;
+  lastCandy  = null;
+  Storage.remove('retro_last_winner');
+  Storage.remove('retro_last_candy');
+
   renderHistory();
+  renderExclusionBadges();
+  document.getElementById('resultCard').classList.remove('show');
 }
 
 // ── SPIN ────────────────────────────────────────────────────────────────
