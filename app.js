@@ -27,6 +27,7 @@ let names      = Storage.get('retro_names')    ?? [...DEFAULT_NAMES];
 let candies    = Storage.get('retro_candies')  ?? [...DEFAULT_CANDIES];
 let history    = Storage.get('retro_history')  ?? [];
 let lastWinner = Storage.getString('retro_last_winner');
+let lastCandy  = Storage.getString('retro_last_candy');
 let spinning   = false;
 
 // ── TABS ────────────────────────────────────────────────────────────────
@@ -141,16 +142,19 @@ function clearHistory() {
 function spin() {
   if (spinning) return;
 
-  const allNames     = names.filter(n => n.trim());
-  const validCandies = candies.filter(c => c.trim());
+  const allNames   = names.filter(n => n.trim());
+  const allCandies = candies.filter(c => c.trim());
 
-  if (!allNames.length)     { showToast('⚠️ Voeg eerst teamleden toe!');    return; }
-  if (!validCandies.length) { showToast('⚠️ Voeg eerst snoepsoorten toe!'); return; }
+  if (!allNames.length)   { showToast('⚠️ Voeg eerst teamleden toe!');    return; }
+  if (!allCandies.length) { showToast('⚠️ Voeg eerst snoepsoorten toe!'); return; }
 
-  // Sluit vorige winner uit, tenzij er maar één persoon is
-  const validNames = allNames.length > 1 && lastWinner
+  // Sluit vorige winner en vorig snoep uit, tenzij er maar één optie is
+  const validNames   = allNames.length > 1 && lastWinner
     ? allNames.filter(n => n !== lastWinner)
     : allNames;
+  const validCandies = allCandies.length > 1 && lastCandy
+    ? allCandies.filter(c => c !== lastCandy)
+    : allCandies;
 
   spinning = true;
   document.getElementById('spinBtn').disabled = true;
@@ -182,7 +186,9 @@ function spin() {
 
     lastWinner = finalPerson;
     Storage.setString('retro_last_winner', finalPerson);
-    renderLastWinnerBadge();
+    lastCandy = finalCandy;
+    Storage.setString('retro_last_candy', finalCandy);
+    renderExclusionBadges();
 
     launchConfetti();
     spinning = false;
@@ -283,7 +289,7 @@ function importSettings(event) {
       Storage.set('retro_names',   names);
       Storage.set('retro_candies', candies);
       showToast(`✅ Geïmporteerd: ${names.length} teamleden, ${candies.length} snoepsoorten`);
-      renderLastWinnerBadge();
+      renderExclusionBadges();
     } catch {
       showToast('⚠️ Bestand kon niet worden gelezen.');
     }
@@ -292,20 +298,52 @@ function importSettings(event) {
   reader.readAsText(file);
 }
 
-// ── LAATSTE WINNER BADGE ──────────────────────────────────────────────
+// ── HERDRAAIEN ────────────────────────────────────────────────────
 
-function renderLastWinnerBadge() {
-  let badge = document.getElementById('last-winner-badge');
+function respin() {
+  if (spinning || !history.length) return;
+
+  // Verwijder laatste ronde
+  history.pop();
+  Storage.set('retro_history', history);
+  renderHistory();
+
+  // Herstel lastWinner en lastCandy naar de vorige ronde
+  const prev = history[history.length - 1] ?? null;
+
+  lastWinner = prev?.person ?? null;
+  if (lastWinner) Storage.setString('retro_last_winner', lastWinner);
+  else Storage.remove('retro_last_winner');
+
+  lastCandy = prev?.candy ?? null;
+  if (lastCandy) Storage.setString('retro_last_candy', lastCandy);
+  else Storage.remove('retro_last_candy');
+
+  document.getElementById('resultCard').classList.remove('show');
+  renderExclusionBadges();
+  spin();
+}
+
+// ── UITSLUITINGS-BADGES ───────────────────────────────────────────────
+
+function renderExclusionBadges() {
+  let badge = document.getElementById('exclusion-badges');
   if (!badge) {
     badge = document.createElement('div');
-    badge.id        = 'last-winner-badge';
+    badge.id        = 'exclusion-badges';
     badge.className = 'last-winner-badge';
-    const slotMachine = document.querySelector('.slot-machine');
-    slotMachine.insertBefore(badge, slotMachine.firstChild);
+    document.querySelector('.slot-machine').insertBefore(badge, document.querySelector('.slot-machine').firstChild);
   }
 
-  badge.innerHTML = lastWinner && names.filter(n => n.trim()).length > 1
-    ? `<span class="last-winner-chip">⏭ <strong>${escHtml(lastWinner)}</strong> doet deze ronde niet mee</span>`
+  const parts = [];
+  if (lastWinner && names.filter(n => n.trim()).length > 1) {
+    parts.push(`<span class="last-winner-chip">⏭ <strong>${escHtml(lastWinner)}</strong> doet niet mee</span>`);
+  }
+  if (lastCandy && candies.filter(c => c.trim()).length > 1) {
+    parts.push(`<span class="last-winner-chip" style="color:#aaa;border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.05)">⏭ <strong>${escHtml(lastCandy)}</strong> wordt overgeslagen</span>`);
+  }
+  badge.innerHTML = parts.length
+    ? `<div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap">${parts.join('')}</div>`
     : '';
 }
 
@@ -330,6 +368,7 @@ function bindEvents() {
 
   // Generator
   document.getElementById('spinBtn').addEventListener('click', spin);
+  document.getElementById('respinBtn').addEventListener('click', respin);
   document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
   document.getElementById('exportBtn').addEventListener('click', exportSettings);
   document.getElementById('importInput').addEventListener('change', importSettings);
@@ -376,7 +415,7 @@ function bindEvents() {
 function init() {
   bindEvents();
   renderHistory();
-  renderLastWinnerBadge();
+  renderExclusionBadges();
 }
 
 init();
