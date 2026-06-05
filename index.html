@@ -500,7 +500,8 @@
       grid.innerHTML += `
         <div class="candy-row" id="name-row-${i}">
           <div class="num-badge" style="flex-shrink:0">${i+1}</div>
-          <input type="text" id="name-${i}" value="${n}" placeholder="Naam ${i+1}">
+          <input type="text" id="name-${i}" value="${n}" placeholder="Naam ${i+1}"
+            onblur="saveNames(true)">
           <button class="delete-btn" onclick="removeMember(${i})">✕</button>
         </div>`;
     });
@@ -516,10 +517,11 @@
   function removeMember(i) {
     if (names.length <= 1) { showToast('⚠️ Je hebt minimaal 1 teamlid nodig!'); return; }
     names.splice(i, 1);
+    saveNames(true);
     renderNameGrid();
   }
 
-  function saveNames() {
+  function saveNames(silent = false) {
     names = [];
     document.querySelectorAll('[id^="name-"]').forEach(el => {
       if (!el.matches('input')) return;
@@ -527,7 +529,8 @@
       if (v) names.push(v);
     });
     localStorage.setItem('retro_names', JSON.stringify(names));
-    showToast('✅ Teamleden opgeslagen!');
+    if (!silent) showToast('✅ Teamleden opgeslagen!');
+    else showAutoSaved();
   }
 
   // ── CANDY LIST ────────────────────────────────────────────
@@ -537,7 +540,8 @@
     candies.forEach((c, i) => {
       list.innerHTML += `
         <div class="candy-row" id="candy-row-${i}">
-          <input type="text" id="candy-${i}" value="${c}" placeholder="Snoepnaam">
+          <input type="text" id="candy-${i}" value="${c}" placeholder="Snoepnaam"
+            onblur="saveCandies(true)">
           <button class="delete-btn" onclick="removeCandy(${i})">✕</button>
         </div>`;
     });
@@ -552,17 +556,19 @@
 
   function removeCandy(i) {
     candies.splice(i, 1);
+    saveCandies(true);
     renderCandyList();
   }
 
-  function saveCandies() {
+  function saveCandies(silent = false) {
     candies = [];
     document.querySelectorAll('input[id^="candy-"]').forEach(el => {
       const v = el.value.trim();
       if (v) candies.push(v);
     });
     localStorage.setItem('retro_candies', JSON.stringify(candies));
-    showToast('✅ Snoeplijst opgeslagen!');
+    if (!silent) showToast('✅ Snoeplijst opgeslagen!');
+    else showAutoSaved();
   }
 
   // ── HISTORY ───────────────────────────────────────────────
@@ -617,12 +623,10 @@
     animateSlot('slot-candy-inner', validCandies, finalCandy, 2400, () => {
       document.getElementById('slot-candy').classList.add('winner');
 
-      // Show result
       document.getElementById('resultPerson').textContent = '🎉 ' + finalPerson;
       document.getElementById('resultCandy').textContent = finalCandy;
       document.getElementById('resultCard').classList.add('show');
 
-      // Save to history
       history.push({
         person: finalPerson,
         candy:  finalCandy,
@@ -631,7 +635,6 @@
       localStorage.setItem('retro_history', JSON.stringify(history));
       renderHistory();
 
-      // Confetti!
       launchConfetti();
 
       spinning = false;
@@ -650,10 +653,8 @@
         if (onDone) onDone();
         return;
       }
-
       const progress = count / totalCycles;
       const delay = 60 + progress * progress * 180;
-
       const item = items[Math.floor(Math.random() * items.length)];
       inner.innerHTML = `<div class="slot-item">${item}</div>`;
       count++;
@@ -689,6 +690,30 @@
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ── AUTO-SAVED INDICATOR ─────────────────────────────────────
+  let autoSavedTimer = null;
+  function showAutoSaved() {
+    let indicator = document.getElementById('autosaved-indicator');
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.id = 'autosaved-indicator';
+      indicator.style.cssText = `
+        position: fixed; top: 1rem; right: 1rem;
+        background: rgba(35,197,94,0.15);
+        border: 1px solid rgba(35,197,94,0.4);
+        color: #23c55e; padding: 0.4rem 0.9rem;
+        border-radius: 2rem; font-size: 0.8rem; font-weight: 600;
+        opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        z-index: 9997;
+      `;
+      indicator.textContent = '✓ Automatisch opgeslagen';
+      document.body.appendChild(indicator);
+    }
+    clearTimeout(autoSavedTimer);
+    indicator.style.opacity = '1';
+    autoSavedTimer = setTimeout(() => { indicator.style.opacity = '0'; }, 1800);
   }
 
   // ── INIT ──────────────────────────────────────────────────
