@@ -261,6 +261,53 @@ function showAutoSaved() {
   autoSavedTimer = setTimeout(() => { el.style.opacity = '0'; }, 1800);
 }
 
+// ── EXPORT / IMPORT ──────────────────────────────────────────────────
+
+function exportSettings() {
+  const data = {
+    versie: 1,
+    teamleden: names.filter(n => n.trim()),
+    snoeplijst: candies.filter(c => c.trim()),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'snoep-generator-instellingen.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importSettings(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+
+      if (!Array.isArray(data.teamleden) || !Array.isArray(data.snoeplijst)) {
+        showToast('⚠️ Ongeldig bestand — verwacht teamleden en snoeplijst.');
+        return;
+      }
+
+      names   = data.teamleden.filter(n => typeof n === 'string' && n.trim());
+      candies = data.snoeplijst.filter(c => typeof c === 'string' && c.trim());
+
+      localStorage.setItem('retro_names',   JSON.stringify(names));
+      localStorage.setItem('retro_candies', JSON.stringify(candies));
+
+      showToast(`✅ Geïmporteerd: ${names.length} teamleden, ${candies.length} snoepsoorten`);
+      renderLastWinnerBadge();
+    } catch {
+      showToast('⚠️ Bestand kon niet worden gelezen.');
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
 // ── HULPFUNCTIE ─────────────────────────────────────────────────────────
 
 function escHtml(str) {

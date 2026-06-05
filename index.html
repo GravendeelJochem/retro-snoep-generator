@@ -58,6 +58,21 @@
         <button class="add-btn" style="margin-top:1rem" onclick="clearHistory()">🗑 Geschiedenis wissen</button>
       </div>
     </div>
+
+    <!-- EXPORT / IMPORT -->
+    <div class="config-card">
+      <h3>🔗 Instellingen delen</h3>
+      <p style="color:#aaa; font-size:0.85rem; margin-bottom:1rem">
+        Exporteer je teamleden en snoeplijst als bestand, zodat collega’s dezelfde instellingen kunnen importeren.
+      </p>
+      <div style="display:flex; gap:0.75rem; flex-wrap:wrap">
+        <button class="save-btn" style="margin-top:0" onclick="exportSettings()">⬇️ Exporteren</button>
+        <label class="add-btn" style="cursor:pointer; text-align:center">
+          ⬆️ Importeren
+          <input type="file" accept=".json" onchange="importSettings(event)" style="display:none">
+        </label>
+      </div>
+    </div>
   </div>
 
   <!-- TEAMLEDEN -->
