@@ -185,6 +185,20 @@ h1 span { font-size: 2.8rem; }
 .result-text  { font-size: 1.1rem; color: #ddd; margin-bottom: 0.5rem; }
 .result-candy { font-size: 1.5rem; font-weight: 700; color: #ff6b35; }
 
+.respin-btn {
+  margin-top: 1.25rem;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #888;
+  border-radius: 2rem;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.respin-btn:hover { border-color: rgba(255,255,255,0.4); color: #ccc; }
+
 /* ── HISTORY ── */
 .history-section { margin-top: 1.5rem; }
 
@@ -403,7 +417,7 @@ input[type="text"]::placeholder { color: #666; }
 
 .autosaved-indicator.visible { opacity: 1; }
 
-/* ── LAATSTE WINNER BADGE ── */
+/* ── UITSLUITINGS-BADGES ── */
 .last-winner-badge {
   text-align: center;
   margin-bottom: 1rem;
@@ -417,6 +431,23 @@ input[type="text"]::placeholder { color: #666; }
   padding: 0.3rem 0.85rem;
   border-radius: 2rem;
   font-size: 0.8rem;
+}
+
+.last-candy-chip {
+  display: inline-block;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #aaa;
+  padding: 0.3rem 0.85rem;
+  border-radius: 2rem;
+  font-size: 0.8rem;
+}
+
+.exclusion-chips {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 /* ── RESPONSIVE ── */

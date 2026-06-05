@@ -47,7 +47,7 @@ function switchTab(panelId, clickedTab) {
 function renderNameGrid() {
   document.getElementById('nameGrid').innerHTML = names.map((n, i) => `
     <div class="candy-row" data-index="${i}">
-      <div class="num-badge" style="flex-shrink:0">${i + 1}</div>
+      <div class="num-badge">${i + 1}</div>
       <input type="text" id="name-${i}" value="${escHtml(n)}" placeholder="Naam ${i + 1}">
       <button class="delete-btn" data-action="remove-member">✕</button>
     </div>`
@@ -165,7 +165,8 @@ function spin() {
     : allCandies;
 
   spinning = true;
-  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('spinBtn').disabled   = true;
+  document.getElementById('respinBtn').disabled = true;
   document.getElementById('resultCard').classList.remove('show');
   document.getElementById('slot-person').classList.remove('winner');
   document.getElementById('slot-candy').classList.remove('winner');
@@ -200,7 +201,8 @@ function spin() {
 
     launchConfetti();
     spinning = false;
-    document.getElementById('spinBtn').disabled = false;
+    document.getElementById('spinBtn').disabled   = false;
+    document.getElementById('respinBtn').disabled = false;
   });
 }
 
@@ -311,12 +313,10 @@ function importSettings(event) {
 function respin() {
   if (spinning || !history.length) return;
 
-  // Verwijder laatste ronde
   history.pop();
   Storage.set('retro_history', history);
   renderHistory();
 
-  // Herstel lastWinner en lastCandy naar de vorige ronde
   const prev = history[history.length - 1] ?? null;
 
   lastWinner = prev?.person ?? null;
@@ -348,10 +348,10 @@ function renderExclusionBadges() {
     parts.push(`<span class="last-winner-chip">⏭ <strong>${escHtml(lastWinner)}</strong> doet niet mee</span>`);
   }
   if (lastCandy && candies.filter(c => c.trim()).length > 1) {
-    parts.push(`<span class="last-winner-chip" style="color:#aaa;border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.05)">⏭ <strong>${escHtml(lastCandy)}</strong> wordt overgeslagen</span>`);
+    parts.push(`<span class="last-candy-chip">⏭ <strong>${escHtml(lastCandy)}</strong> wordt overgeslagen</span>`);
   }
   badge.innerHTML = parts.length
-    ? `<div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap">${parts.join('')}</div>`
+    ? `<div class="exclusion-chips">${parts.join('')}</div>`
     : '';
 }
 
