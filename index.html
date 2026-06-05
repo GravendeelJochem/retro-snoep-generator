@@ -12,10 +12,10 @@
   <h1><span>🍬</span> Retro Snoep Generator</h1>
   <p class="subtitle">Wie haalt er snoep? En welk soort? Laat het lot beslissen!</p>
 
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('generator', this)">🎰 Generator</button>
-    <button class="tab" onclick="switchTab('teamleden', this)">👥 Teamleden</button>
-    <button class="tab" onclick="switchTab('snoep', this)">🍫 Snoeplijst</button>
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-panel="generator">🎰 Generator</button>
+    <button class="tab" data-panel="teamleden">👥 Teamleden</button>
+    <button class="tab" data-panel="snoep">🍫 Snoeplijst</button>
   </div>
 
   <!-- GENERATOR -->
@@ -40,7 +40,7 @@
         </div>
       </div>
 
-      <button class="spin-btn" id="spinBtn" onclick="spin()">🎲 SPIN!</button>
+      <button class="spin-btn" id="spinBtn">🎲 SPIN!</button>
 
       <div class="result-card" id="resultCard">
         <div class="result-person" id="resultPerson"></div>
@@ -55,21 +55,21 @@
         <div id="historyList">
           <div class="empty-state">Nog geen rondes gespeeld.</div>
         </div>
-        <button class="add-btn" style="margin-top:1rem" onclick="clearHistory()">🗑 Geschiedenis wissen</button>
+        <button class="add-btn history-clear-btn" id="clearHistoryBtn">🗑 Geschiedenis wissen</button>
       </div>
     </div>
 
     <!-- EXPORT / IMPORT -->
     <div class="config-card">
       <h3>🔗 Instellingen delen</h3>
-      <p style="color:#aaa; font-size:0.85rem; margin-bottom:1rem">
+      <p class="share-desc">
         Exporteer je teamleden en snoeplijst als bestand, zodat collega’s dezelfde instellingen kunnen importeren.
       </p>
-      <div style="display:flex; gap:0.75rem; flex-wrap:wrap">
-        <button class="save-btn" style="margin-top:0" onclick="exportSettings()">⬇️ Exporteren</button>
-        <label class="add-btn" style="cursor:pointer; text-align:center">
+      <div class="share-actions">
+        <button class="save-btn" id="exportBtn">⬇️ Exporteren</button>
+        <label class="add-btn import-label">
           ⬆️ Importeren
-          <input type="file" accept=".json" onchange="importSettings(event)" style="display:none">
+          <input type="file" id="importInput" accept=".json">
         </label>
       </div>
     </div>
@@ -80,9 +80,9 @@
     <div class="config-card">
       <h3>👥 Teamleden</h3>
       <div class="candy-list" id="nameGrid"></div>
-      <button class="add-btn" onclick="addMember()">+ Teamlid toevoegen</button>
+      <button class="add-btn" id="addMemberBtn">+ Teamlid toevoegen</button>
       <br>
-      <button class="save-btn" onclick="saveNames()">💾 Opslaan</button>
+      <button class="save-btn" id="saveNamesBtn">💾 Opslaan</button>
     </div>
   </div>
 
@@ -91,14 +91,15 @@
     <div class="config-card">
       <h3>🍫 Snoepsoorten</h3>
       <div class="candy-list" id="candyList"></div>
-      <button class="add-btn" onclick="addCandy()">+ Snoep toevoegen</button>
+      <button class="add-btn" id="addCandyBtn">+ Snoep toevoegen</button>
       <br>
-      <button class="save-btn" onclick="saveCandies()">💾 Opslaan</button>
+      <button class="save-btn" id="saveCandiesBtn">💾 Opslaan</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="autosaved-indicator" id="autosaved-indicator">✓ Automatisch opgeslagen</div>
 
 <script src="app.js"></script>
 </body>

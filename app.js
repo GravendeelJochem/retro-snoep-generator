@@ -11,37 +11,44 @@ const DEFAULT_CANDIES = [
   'Haribo Mix 🌈',
 ];
 
+// ── STORAGE HELPER ────────────────────────────────────────────────────
+
+const Storage = {
+  get:       (key, fallback = null) => JSON.parse(localStorage.getItem(key) ?? 'null') ?? fallback,
+  set:       (key, value)           => localStorage.setItem(key, JSON.stringify(value)),
+  getString: (key)                  => localStorage.getItem(key),
+  setString: (key, value)           => localStorage.setItem(key, value),
+  remove:    (key)                  => localStorage.removeItem(key),
+};
+
 // ── STATE ────────────────────────────────────────────────────────────────
 
-let names      = JSON.parse(localStorage.getItem('retro_names')    || 'null') || [...DEFAULT_NAMES];
-let candies    = JSON.parse(localStorage.getItem('retro_candies') || 'null') || [...DEFAULT_CANDIES];
-let history    = JSON.parse(localStorage.getItem('retro_history') || '[]');
-let lastWinner = localStorage.getItem('retro_last_winner')        || null;
+let names      = Storage.get('retro_names')    ?? [...DEFAULT_NAMES];
+let candies    = Storage.get('retro_candies')  ?? [...DEFAULT_CANDIES];
+let history    = Storage.get('retro_history')  ?? [];
+let lastWinner = Storage.getString('retro_last_winner');
 let spinning   = false;
 
 // ── TABS ────────────────────────────────────────────────────────────────
 
-function switchTab(id, clickedEl) {
+function switchTab(panelId, clickedTab) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('panel-' + id).classList.add('active');
-  clickedEl.classList.add('active');
+  document.getElementById('panel-' + panelId).classList.add('active');
+  clickedTab.classList.add('active');
 
-  if (id === 'teamleden') renderNameGrid();
-  if (id === 'snoep')     renderCandyList();
+  if (panelId === 'teamleden') renderNameGrid();
+  if (panelId === 'snoep')     renderCandyList();
 }
 
 // ── TEAMLEDEN ────────────────────────────────────────────────────────
 
 function renderNameGrid() {
-  const grid = document.getElementById('nameGrid');
-  grid.innerHTML = names.map((n, i) => `
-    <div class="candy-row" id="name-row-${i}">
+  document.getElementById('nameGrid').innerHTML = names.map((n, i) => `
+    <div class="candy-row" data-index="${i}">
       <div class="num-badge" style="flex-shrink:0">${i + 1}</div>
-      <input type="text" id="name-${i}" value="${escHtml(n)}" placeholder="Naam ${i + 1}"
-        oninput="names[${i}] = this.value"
-        onblur="persistNames()">
-      <button class="delete-btn" onclick="removeMember(${i})">✕</button>
+      <input type="text" id="name-${i}" value="${escHtml(n)}" placeholder="Naam ${i + 1}">
+      <button class="delete-btn" data-action="remove-member">✕</button>
     </div>`
   ).join('');
 }
@@ -60,7 +67,7 @@ function removeMember(i) {
 }
 
 function persistNames() {
-  localStorage.setItem('retro_names', JSON.stringify(names.filter(n => n.trim())));
+  Storage.set('retro_names', names.filter(n => n.trim()));
   showAutoSaved();
 }
 
@@ -72,13 +79,10 @@ function saveNames() {
 // ── SNOEPLIJST ──────────────────────────────────────────────────────
 
 function renderCandyList() {
-  const list = document.getElementById('candyList');
-  list.innerHTML = candies.map((c, i) => `
-    <div class="candy-row" id="candy-row-${i}">
-      <input type="text" id="candy-${i}" value="${escHtml(c)}" placeholder="Snoepnaam"
-        oninput="candies[${i}] = this.value"
-        onblur="persistCandies()">
-      <button class="delete-btn" onclick="removeCandy(${i})">✕</button>
+  document.getElementById('candyList').innerHTML = candies.map((c, i) => `
+    <div class="candy-row" data-index="${i}">
+      <input type="text" id="candy-${i}" value="${escHtml(c)}" placeholder="Snoepnaam">
+      <button class="delete-btn" data-action="remove-candy">✕</button>
     </div>`
   ).join('');
 }
@@ -96,7 +100,7 @@ function removeCandy(i) {
 }
 
 function persistCandies() {
-  localStorage.setItem('retro_candies', JSON.stringify(candies.filter(c => c.trim())));
+  Storage.set('retro_candies', candies.filter(c => c.trim()));
   showAutoSaved();
 }
 
@@ -128,7 +132,7 @@ function renderHistory() {
 function clearHistory() {
   if (!confirm('Geschiedenis wissen?')) return;
   history = [];
-  localStorage.removeItem('retro_history');
+  Storage.remove('retro_history');
   renderHistory();
 }
 
@@ -173,11 +177,11 @@ function spin() {
       candy:  finalCandy,
       date:   new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }),
     });
-    localStorage.setItem('retro_history', JSON.stringify(history));
+    Storage.set('retro_history', history);
     renderHistory();
 
     lastWinner = finalPerson;
-    localStorage.setItem('retro_last_winner', finalPerson);
+    Storage.setString('retro_last_winner', finalPerson);
     renderLastWinnerBadge();
 
     launchConfetti();
@@ -214,6 +218,7 @@ function launchConfetti() {
   for (let i = 0; i < 80; i++) {
     const el = document.createElement('div');
     el.className = 'confetti-piece';
+    // Dynamische waarden moeten inline blijven — geen vaste CSS-klasse mogelijk
     el.style.cssText = `
       left: ${Math.random() * 100}vw;
       background: ${colors[Math.floor(Math.random() * colors.length)]};
@@ -240,25 +245,10 @@ function showToast(msg) {
 let autoSavedTimer = null;
 
 function showAutoSaved() {
-  let el = document.getElementById('autosaved-indicator');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'autosaved-indicator';
-    el.style.cssText = `
-      position: fixed; top: 1rem; right: 1rem;
-      background: rgba(35,197,94,0.15);
-      border: 1px solid rgba(35,197,94,0.4);
-      color: #23c55e; padding: 0.4rem 0.9rem;
-      border-radius: 2rem; font-size: 0.8rem; font-weight: 600;
-      opacity: 0; transition: opacity 0.3s; pointer-events: none;
-      z-index: 9997;
-    `;
-    el.textContent = '✓ Automatisch opgeslagen';
-    document.body.appendChild(el);
-  }
+  const el = document.getElementById('autosaved-indicator');
   clearTimeout(autoSavedTimer);
-  el.style.opacity = '1';
-  autoSavedTimer = setTimeout(() => { el.style.opacity = '0'; }, 1800);
+  el.classList.add('visible');
+  autoSavedTimer = setTimeout(() => el.classList.remove('visible'), 1800);
 }
 
 // ── EXPORT / IMPORT ──────────────────────────────────────────────────
@@ -266,14 +256,12 @@ function showAutoSaved() {
 function exportSettings() {
   const data = {
     versie: 1,
-    teamleden: names.filter(n => n.trim()),
+    teamleden:  names.filter(n => n.trim()),
     snoeplijst: candies.filter(c => c.trim()),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = 'snoep-generator-instellingen.json';
+  const a    = Object.assign(document.createElement('a'), { href: url, download: 'snoep-generator-instellingen.json' });
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -286,18 +274,14 @@ function importSettings(event) {
   reader.onload = (e) => {
     try {
       const data = JSON.parse(e.target.result);
-
       if (!Array.isArray(data.teamleden) || !Array.isArray(data.snoeplijst)) {
         showToast('⚠️ Ongeldig bestand — verwacht teamleden en snoeplijst.');
         return;
       }
-
       names   = data.teamleden.filter(n => typeof n === 'string' && n.trim());
       candies = data.snoeplijst.filter(c => typeof c === 'string' && c.trim());
-
-      localStorage.setItem('retro_names',   JSON.stringify(names));
-      localStorage.setItem('retro_candies', JSON.stringify(candies));
-
+      Storage.set('retro_names',   names);
+      Storage.set('retro_candies', candies);
       showToast(`✅ Geïmporteerd: ${names.length} teamleden, ${candies.length} snoepsoorten`);
       renderLastWinnerBadge();
     } catch {
@@ -306,6 +290,23 @@ function importSettings(event) {
     event.target.value = '';
   };
   reader.readAsText(file);
+}
+
+// ── LAATSTE WINNER BADGE ──────────────────────────────────────────────
+
+function renderLastWinnerBadge() {
+  let badge = document.getElementById('last-winner-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id        = 'last-winner-badge';
+    badge.className = 'last-winner-badge';
+    const slotMachine = document.querySelector('.slot-machine');
+    slotMachine.insertBefore(badge, slotMachine.firstChild);
+  }
+
+  badge.innerHTML = lastWinner && names.filter(n => n.trim()).length > 1
+    ? `<span class="last-winner-chip">⏭ <strong>${escHtml(lastWinner)}</strong> doet deze ronde niet mee</span>`
+    : '';
 }
 
 // ── HULPFUNCTIE ─────────────────────────────────────────────────────────
@@ -318,35 +319,64 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-// ── LAATSTE WINNER BADGE ──────────────────────────────────────────────
+// ── EVENT LISTENERS ───────────────────────────────────────────────────
 
-function renderLastWinnerBadge() {
-  let badge = document.getElementById('last-winner-badge');
-  if (!badge) {
-    badge = document.createElement('div');
-    badge.id = 'last-winner-badge';
-    badge.style.cssText = `
-      text-align: center; margin-bottom: 1rem;
-      font-size: 0.85rem; color: #aaa;
-    `;
-    const slotMachine = document.querySelector('.slot-machine');
-    slotMachine.insertBefore(badge, slotMachine.firstChild);
-  }
+function bindEvents() {
+  // Tabs
+  document.getElementById('tabs').addEventListener('click', (e) => {
+    const tab = e.target.closest('.tab[data-panel]');
+    if (tab) switchTab(tab.dataset.panel, tab);
+  });
 
-  if (lastWinner && names.filter(n => n.trim()).length > 1) {
-    badge.innerHTML = `
-      <span style="
-        background: rgba(255,107,53,0.15);
-        border: 1px solid rgba(255,107,53,0.4);
-        color: #ff6b35; padding: 0.3rem 0.85rem;
-        border-radius: 2rem; font-size: 0.8rem;
-      ">⏭ <strong>${escHtml(lastWinner)}</strong> doet deze ronde niet mee</span>`;
-  } else {
-    badge.innerHTML = '';
-  }
+  // Generator
+  document.getElementById('spinBtn').addEventListener('click', spin);
+  document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
+  document.getElementById('exportBtn').addEventListener('click', exportSettings);
+  document.getElementById('importInput').addEventListener('change', importSettings);
+
+  // Teamleden
+  document.getElementById('addMemberBtn').addEventListener('click', addMember);
+  document.getElementById('saveNamesBtn').addEventListener('click', saveNames);
+
+  const nameGrid = document.getElementById('nameGrid');
+  nameGrid.addEventListener('input', (e) => {
+    if (!e.target.matches('input[type="text"]')) return;
+    const i = parseInt(e.target.id.replace('name-', ''), 10);
+    names[i] = e.target.value;
+  });
+  nameGrid.addEventListener('focusout', (e) => {
+    if (e.target.matches('input[type="text"]')) persistNames();
+  });
+  nameGrid.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="remove-member"]');
+    if (btn) removeMember(parseInt(btn.closest('[data-index]').dataset.index, 10));
+  });
+
+  // Snoeplijst
+  document.getElementById('addCandyBtn').addEventListener('click', addCandy);
+  document.getElementById('saveCandiesBtn').addEventListener('click', saveCandies);
+
+  const candyList = document.getElementById('candyList');
+  candyList.addEventListener('input', (e) => {
+    if (!e.target.matches('input[type="text"]')) return;
+    const i = parseInt(e.target.id.replace('candy-', ''), 10);
+    candies[i] = e.target.value;
+  });
+  candyList.addEventListener('focusout', (e) => {
+    if (e.target.matches('input[type="text"]')) persistCandies();
+  });
+  candyList.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="remove-candy"]');
+    if (btn) removeCandy(parseInt(btn.closest('[data-index]').dataset.index, 10));
+  });
 }
 
 // ── INIT ────────────────────────────────────────────────────────────────
 
-renderHistory();
-renderLastWinnerBadge();
+function init() {
+  bindEvents();
+  renderHistory();
+  renderLastWinnerBadge();
+}
+
+init();
